@@ -1,0 +1,50 @@
+# Configuratie antrenare - L4 GPU (24GB VRAM), Google Colab
+# MAXIMALLY OPTIMIZED — toate optimizarile active
+
+# ── Date ─────────────────────────────────────────────────────────────────────
+language: ro
+dataset_name: uonlp/CulturaX
+max_train_bytes: 19864223744      # ~18.5 GB text brut (pt ~5.25B tokens)
+streaming: true
+num_proc: 1                        # streaming nu suporta multiproc
+
+# ── Tokenizer ─────────────────────────────────────────────────────────────────
+tokenizer_path: ./tokenizer/ro_bpe_32k
+tokenizer_sample_bytes: 2147483648  # 2 GB sample pentru antrenare tokenizer
+tokenizer_vocab_size: 32000
+
+# ── Antrenare ─────────────────────────────────────────────────────────────────
+# 210M params * 25 = 5.25B tokens
+# Effective batch: 32 seq * 2 grad_acc * 2048 = 131,072 tokens/step
+# Steps: 5.25B / 131072 ≈ 40,050 steps
+max_steps: 40050
+warmup_steps: 1500                 # Redus: model mic converge rapid
+learning_rate: 6.0e-4              # Marit: model mic suporta LR mai mare
+lr_scheduler_type: cosine
+min_lr_ratio: 0.1
+weight_decay: 0.1
+adam_beta1: 0.9
+adam_beta2: 0.95
+adam_epsilon: 1.0e-8
+max_grad_norm: 1.0
+
+# ── Batch / Memorie ───────────────────────────────────────────────────────────
+per_device_train_batch_size: 32
+gradient_accumulation_steps: 2
+dtype: bfloat16
+gradient_checkpointing: false      # DEZACTIVAT: 210M incape in 24GB fara el
+context_length: 2048               #   → boost ~25% throughput
+torch_compile: true
+torch_compile_mode: max-autotune
+optim: adamw_torch_fused
+prefetch_buffer_size: 500          # Marit: mai mult buffer = zero stall GPU
+
+# ── Checkpointing (GCP) ──────────────────────────────────────────────
+save_steps: 2000                   # Redus frecventa: mai putin I/O overhead
+checkpoint_dir: /content/gcs/200m_ro_checkpoints
+resume_from_checkpoint: true
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging_steps: 100                 # Redus: mai putin overhead logging
+use_wandb: false
+wandb_project: 200m_ro_overtrained

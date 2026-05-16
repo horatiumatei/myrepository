@@ -1,0 +1,13 @@
+torch>=2.1.0
+transformers>=4.36.0
+datasets>=2.16.0
+tokenizers>=0.15.0
+accelerate>=0.25.0
+wandb
+tqdm
+pyyaml
+huggingface_hub
+sentencepiece
+ninja                  # necesar pentru compilarea flash-attn
+# flash-attn se instaleaza separat in Colab (vezi README):
+# pip install flash-attn --no-build-isolation
